@@ -16,39 +16,46 @@ class DealsViewModels with ChangeNotifier implements AppLoading {
   int _prevTab = 0;
   int _pageNo = 1;
   bool _isLoading = false;
+  bool _isNextPageAvailable = true;
 
   String get counter => _counter;
   List<Deal> get listViewData => _listViewData;
   int get prevTab => _prevTab;
   int get pageNo => _pageNo;
   bool get isLoading => _isLoading;
+  bool get isNextPageAvailable => _isNextPageAvailable;
 
-  setisLoadingTrue() {
+  setIsLoadingTrue() {
     _isLoading = true;
     notifyListeners();
   }
 
-  setisLoadingFalse() {
+  setIsLoadingFalse() {
     _isLoading = false;
     notifyListeners();
   }
 
-  increamentPageCount() {
+  incrementPageCount() {
     _pageNo++;
     print('Page Count >>>> $_pageNo');
   }
 
   resetPageCount() {
     _pageNo = 1;
+    _isNextPageAvailable = true;
     notifyListeners();
   }
 
   clearDealList() {
+    _isNextPageAvailable = true;
     _listViewData.clear();
   }
 
   setDealList(List<Deal>? listData) {
-    setisLoadingFalse();
+    if((listData?.length ?? 0) < 10){
+      _isNextPageAvailable = false;
+      notifyListeners();
+    }
     _listViewData.addAll(listData ?? []);
     notifyListeners();
   }
@@ -59,9 +66,8 @@ class DealsViewModels with ChangeNotifier implements AppLoading {
       clearDealList();
     }
 
-
     _prevTab = tabIndex;
-    isNextPage ? increamentPageCount() : _pageNo = 1;
+    isNextPage ? incrementPageCount() : _pageNo = 1;
 
     apiManager = ApiManager(this);
     print('inside getDealsData');
@@ -85,12 +91,17 @@ class DealsViewModels with ChangeNotifier implements AppLoading {
 
   @override
   void hideProgress() {
+    // setIsLoadingFalse();
     easyLoader.removeLoader();
+    Future.delayed(const Duration(microseconds: 500), () {
+      setIsLoadingFalse();
+    });
   }
 
   @override
   void isSuccessful(String resp, {int? type}) {
     DealsModel topDealsModel = DealsModel.fromJson(jsonDecode(resp));
+
     setDealList(topDealsModel.deals);
 
     switch (type) {

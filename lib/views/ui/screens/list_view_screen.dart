@@ -17,7 +17,6 @@ class ListViewScreen extends StatefulWidget {
 class _ListViewScreenState extends State<ListViewScreen> {
   DealsViewModels? dealsViewmodels;
   final ScrollController _scrollController = ScrollController();
-  bool isLoading = false;
 
   @override
   void initState() {
@@ -29,7 +28,9 @@ class _ListViewScreenState extends State<ListViewScreen> {
       if (_scrollController.position.pixels >=
           _scrollController.position.maxScrollExtent - 100) {
         // Highlight: Check if user is near the bottom
-        if (!isLoading) {
+        var provider = Provider.of<DealsViewModels>(context, listen: false);
+        print('isLoading From Provider >>> ${provider.isLoading}');
+        if (!provider.isLoading) {
           getNextPageDealsData(); // Trigger data loading
         }
       }
@@ -37,6 +38,7 @@ class _ListViewScreenState extends State<ListViewScreen> {
 
     // Call the API using Provider with mounted check
     Future.microtask(() {
+
       print('Future.microtask Performed');
       if (mounted) {
         Provider.of<DealsViewModels>(context, listen: false)
@@ -53,8 +55,13 @@ class _ListViewScreenState extends State<ListViewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    print('object');
     return Scaffold(
       body: Consumer<DealsViewModels>(builder: (context, value, child) {
+        // Provider.of<DealsViewModels>(context, listen: false)
+        //     .setIsLoadingFalse();
+        // print('isLoading From consumer Listview after making it false >>> ${Provider.of<DealsViewModels>(context, listen: false)
+        //     .isLoading}');
         return RefreshIndicator(
           onRefresh: _refreshData,
           child: ListView.separated(
@@ -77,12 +84,21 @@ class _ListViewScreenState extends State<ListViewScreen> {
   }
 
   getNextPageDealsData() {
-    isLoading = true;
 
-    isLoading
-        ? Provider.of<DealsViewModels>(context, listen: false)
-            .getDealsData(widget.tabIndex, isNextPage: true)
-        : null;
+    var provider = Provider.of<DealsViewModels>(context, listen: false);
+    provider.setIsLoadingTrue();
+    print('isLoading From getNextPageDealsData after making it true >>> ${provider.isLoading}');
+
+    if(provider.isNextPageAvailable){
+      provider.isLoading
+          ? provider.getDealsData(widget.tabIndex, isNextPage: true)
+          : null;
+    }else{
+      print('Page not Available');
+    }
+
+
+
   }
 
   Widget listViewContainer(Deal dealData, int index) {
